@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AVIRA - Smart Ear-Wearable for Cattle Health Monitoring</title>
+  <meta name="description" content="AVIRA is an AI-powered smart ear tag that continuously monitors cattle health, predicts diseases 48 hours early, and empowers farmers with real-time insights." />
+  <meta name="keywords" content="cattle health monitoring, smart ear tag, AI agriculture, livestock IoT, disease prediction, AVIRA" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --primary:      #1A5276;
+      --primary-dark: #154360;
+      --primary-light:#2471A3;
+      --secondary:    #27AE60;
+      --secondary-dark:#1E8449;
+      --accent:       #F39C12;
+      --accent-dark:  #D68910;
+      --bg-light:     #F8F9FA;
+      --bg-white:     #FFFFFF;
+      --text-dark:    #2C3E50;
+      --text-muted:   #7F8C8D;
+      --border:       #DEE2E6;
+      --shadow-sm:    0 2px 8px rgba(0,0,0,.08);
+      --shadow-md:    0 8px 32px rgba(0,0,0,.12);
+      --shadow-lg:    0 16px 48px rgba(0,0,0,.18);
+      --radius-sm:    8px;
+      --radius-md:    16px;
+      --radius-lg:    24px;
+      --transition:   0.35s cubic-bezier(0.4,0,0.2,1);
+      --nav-height:   72px;
+      --font-body:    'Inter', sans-serif;
+      --font-heading: 'Poppins', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font-body); color: var(--text-dark); background: var(--bg-white); line-height: 1.6; overflow-x: hidden; }
+    img { display: block; max-width: 100%; }
+    a  { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+    .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 96px 0; }
+    .section-tag { display: inline-block; background: linear-gradient(135deg, rgba(39,174,96,.15), rgba(26,82,118,.1)); color: var(--secondary); border: 1px solid rgba(39,174,96,.3); border-radius: 50px; padding: 6px 20px; font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 16px; }
+    .section-title { font-family: var(--font-heading); font-size: clamp(1.8rem, 3.5vw, 2.75rem); font-weight: 700; color: var(--text-dark); line-height: 1.2; margin-bottom: 16px; }
+    .section-subtitle { font-size: 1.05rem; color: var(--text-muted); max-width: 620px; line-height: 1.75; }
+    .section-header { text-align: center; margin-bottom: 64px; }
+    .section-header .section-subtitle { margin: 0 auto; }
+    .fade-in { opacity: 0; transform: translateY(36px); transition: opacity .65s var(--transition), transform .65s var(--transition); }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+    .fade-in.delay-1 { transition-delay: .1s; }
+    .fade-in.delay-2 { transition-delay: .2s; }
+    .fade-in.delay-3 { transition-delay: .3s; }
+    .fade-in.delay-4 { transition-delay: .4s; }
+    /* NAVBAR */
+    #navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; height: var(--nav-height); display: flex; align-items: center; transition: background var(--transition), box-shadow var(--transition); }
+    #navbar.scrolled { background: rgba(26,82,118,.97); backdrop-filter: blur(12px); box-shadow: 0 4px 24px rgba(0,0,0,.2); }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; }
+    .nav-logo .logo-icon { width: 42px; height: 42px; background: linear-gradient(135deg, var(--secondary), var(--primary-light)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #fff; box-shadow: 0 4px 12px rgba(39,174,96,.35); }
+    .nav-logo .logo-text { font-family: var(--font-heading); font-size: 1.45rem; font-weight: 800; color: #fff; letter-spacing: .02em; }
+    .nav-logo .logo-text span { color: var(--accent); }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-links a { color: rgba(255,255,255,.85); font-size: .875rem; font-weight: 500; padding: 8px 14px; border-radius: 8px; transition: color var(--transition), background var(--transition); }
+    .nav-links a:hover { color: #fff; background: rgba(255,255,255,.12); }
+    .nav-cta { background: var(--accent) !important; color: var(--text-dark) !important; font-weight: 700 !important; border-radius: 50px !important; padding: 8px 20px !important; }
+    .nav-cta:hover { background: var(--accent-dark) !important; }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; background: none; border: none; }
+    .hamburger span { display: block; width: 24px; height: 2px; background: #fff; border-radius: 4px; transition: all var(--transition); }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .mobile-menu { display: none; position: fixed; top: var(--nav-height); left: 0; right: 0; background: rgba(21,67,96,.98); backdrop-filter: blur(16px); padding: 16px 24px 24px; z-index: 999; flex-direction: column; gap: 4px; box-shadow: 0 8px 32px rgba(0,0,0,.3); }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { color: rgba(255,255,255,.85); font-size: .95rem; font-weight: 500; padding: 12px 16px; border-radius: 8px; transition: background var(--transition), color var(--transition); }
+    .mobile-menu a:hover { background: rgba(255,255,255,.1); color: #fff; }
+    /* HERO */
+    #hero { position: relative; height: 100vh; min-height: 640px; display: flex; align-items: center; justify-content: center; overflow: hidden; text-align: center; }
+    .hero-video-wrap { position: absolute; inset: 0; z-index: 0; }
+    #hero-video { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .hero-video-wrap::before { content: ''; position: absolute; inset: 0; background: url('assets/hero-bg.jpg') center/cover no-repeat; z-index: -1; }
+    .hero-overlay { position: absolute; inset: 0; background: linear-gradient(160deg, rgba(21,67,96,.72) 0%, rgba(26,82,118,.55) 40%, rgba(10,30,45,.78) 100%); z-index: 1; }
+    .hero-particles { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
+    .hero-particles span { position: absolute; border-radius: 50%; background: rgba(243,156,18,.6); animation: particleDrift linear infinite; }
+    @keyframes particleDrift { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(-10vh) scale(1); opacity: 0; } }
+    .hero-content { position: relative; z-index: 3; max-width: 820px; padding: 0 24px; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 50px; padding: 8px 20px; color: rgba(255,255,255,.9); font-size: .8rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 28px; backdrop-filter: blur(8px); animation: fadeDown .8s ease both; }
+    .hero-badge i { color: var(--accent); }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeUp   { from { opacity: 0; transform: translateY(30px);  } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+    .hero-title { font-family: var(--font-heading); font-size: clamp(2.2rem, 5.5vw, 4rem); font-weight: 800; color: #fff; line-height: 1.15; margin-bottom: 20px; animation: fadeUp .9s ease .15s both; text-shadow: 0 2px 20px rgba(0,0,0,.3); }
+    .hero-title em { font-style: normal; background: linear-gradient(90deg, var(--accent), #F8C471); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-subtitle { font-size: clamp(.95rem, 2vw, 1.15rem); color: rgba(255,255,255,.82); margin-bottom: 14px; letter-spacing: .04em; font-weight: 500; animation: fadeUp .9s ease .25s both; }
+    .hero-desc { font-size: clamp(.9rem, 1.8vw, 1.05rem); color: rgba(255,255,255,.7); max-width: 600px; margin: 0 auto 40px; line-height: 1.75; animation: fadeUp .9s ease .35s both; }
+    .hero-actions { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; animation: fadeUp .9s ease .45s both; }
+    .btn { display: inline-flex; align-items: center; gap: 10px; padding: 15px 32px; border-radius: 50px; font-size: .95rem; font-weight: 600; font-family: var(--font-body); cursor: pointer; border: none; transition: all var(--transition); white-space: nowrap; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: var(--text-dark); box-shadow: 0 8px 28px rgba(243,156,18,.4); }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(243,156,18,.55); }
+    .btn-outline { background: rgba(255,255,255,.12); color: #fff; border: 2px solid rgba(255,255,255,.4); backdrop-filter: blur(8px); }
+    .btn-outline:hover { background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.7); transform: translateY(-3px); }
+    .scroll-indicator { position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: fadeIn 1s ease 1.2s both; }
+    .scroll-indicator span { font-size: .7rem; color: rgba(255,255,255,.6); letter-spacing: .12em; text-transform: uppercase; }
+    .scroll-mouse { width: 24px; height: 38px; border: 2px solid rgba(255,255,255,.45); border-radius: 12px; position: relative; }
+    .scroll-mouse::after { content: ''; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 4px; height: 8px; background: rgba(255,255,255,.7); border-radius: 2px; animation: scrollBounce 1.8s ease-in-out infinite; }
+    @keyframes scrollBounce { 0%, 100% { top: 6px; opacity: 1; } 60% { top: 16px; opacity: .4; } }
+    .hero-stats { position: absolute; bottom: 0; left: 0; right: 0; z-index: 4; background: rgba(255,255,255,.08); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,.12); display: flex; justify-content: center; animation: fadeIn .9s ease .7s both; }
+    .hero-stats-inner { display: flex; width: 100%; max-width: 900px; }
+    .stat-item { flex: 1; text-align: center; padding: 18px 16px; border-right: 1px solid rgba(255,255,255,.12); }
+    .stat-item:last-child { border-right: none; }
+    .stat-value { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 800; color: var(--accent); line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-size: .72rem; color: rgba(255,255,255,.7); letter-spacing: .07em; text-transform: uppercase; }
+    /* ABOUT */
+    #about { background: var(--bg-white); }
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; }
+    .about-visual { position: relative; }
+    .about-card-main { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: var(--radius-lg); padding: 40px; color: #fff; position: relative; overflow: hidden; box-shadow: var(--shadow-lg); }
+    .about-card-main::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: rgba(255,255,255,.05); border-radius: 50%; }
+    .about-card-main::after { content: ''; position: absolute; bottom: -40px; left: -40px; width: 150px; height: 150px; background: rgba(39,174,96,.15); border-radius: 50%; }
+    .about-tag-icon { width: 64px; height: 64px; background: linear-gradient(135deg, var(--secondary), #52BE80); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #fff; margin-bottom: 24px; box-shadow: 0 8px 20px rgba(39,174,96,.4); }
+    .about-card-main h3 { font-family: var(--font-heading); font-size: 1.35rem; font-weight: 700; margin-bottom: 12px; position: relative; z-index: 1; }
+    .about-card-main p { font-size: .9rem; color: rgba(255,255,255,.8); line-height: 1.7; position: relative; z-index: 1; }
+    .about-card-float { position: absolute; right: -28px; bottom: 28px; background: var(--bg-white); border-radius: var(--radius-md); padding: 18px 22px; box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 14px; border: 1px solid var(--border); min-width: 200px; }
+    .float-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #F39C12, #E67E22); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; flex-shrink: 0; }
+    .float-text strong { display: block; font-size: .95rem; font-weight: 700; color: var(--text-dark); }
+    .float-text span { font-size: .78rem; color: var(--text-muted); }
+    .about-text .section-tag { display: block; }
+    .about-list { margin-top: 28px; display: flex; flex-direction: column; gap: 16px; }
+    .about-list-item { display: flex; align-items: flex-start; gap: 14px; }
+    .about-list-item .list-icon { width: 36px; height: 36px; background: linear-gradient(135deg, rgba(39,174,96,.15), rgba(26,82,118,.1)); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--secondary); font-size: .9rem; flex-shrink: 0; margin-top: 2px; }
+    .about-list-item p { font-size: .93rem; color: var(--text-muted); line-height: 1.65; }
+    .about-list-item strong { display: block; font-weight: 600; color: var(--text-dark); margin-bottom: 2px; }
+    /* FEATURES */
+    #features { background: var(--bg-light); }
+    .features-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+    .feature-card { background: var(--bg-white); border-radius: var(--radius-md); padding: 36px 28px; border: 1px solid var(--border); transition: all var(--transition); position: relative; overflow: hidden; cursor: default; }
+    .feature-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, var(--primary), var(--primary-light)); opacity: 0; transition: opacity var(--transition); z-index: 0; }
+    .feature-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-lg); border-color: transparent; }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-card:hover .feat-icon, .feature-card:hover .feat-title, .feature-card:hover .feat-desc { color: #fff; }
+    .feature-card:hover .feat-icon { background: rgba(255,255,255,.15); }
+    .feat-icon { width: 60px; height: 60px; background: linear-gradient(135deg, rgba(26,82,118,.1), rgba(39,174,96,.1)); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--primary); margin-bottom: 22px; transition: all var(--transition); position: relative; z-index: 1; }
+    .feat-title { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 12px; transition: color var(--transition); position: relative; z-index: 1; }
+    .feat-desc { font-size: .875rem; color: var(--text-muted); line-height: 1.7; transition: color var(--transition); position: relative; z-index: 1; }
+    .feat-number { position: absolute; top: 20px; right: 20px; font-family: var(--font-heading); font-size: 2.8rem; font-weight: 800; color: rgba(26,82,118,.06); z-index: 1; transition: color var(--transition); }
+    .feature-card:hover .feat-number { color: rgba(255,255,255,.08); }
+    /* HOW IT WORKS */
+    #how-it-works { background: var(--bg-white); }
+    .steps-container { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+    .steps-container::before { content: ''; position: absolute; top: 56px; left: calc(16.67% + 20px); right: calc(16.67% + 20px); height: 2px; background: linear-gradient(90deg, var(--secondary), var(--primary-light), var(--secondary)); z-index: 0; }
+    .step-card { background: var(--bg-white); border-radius: var(--radius-md); padding: 36px 28px 32px; border: 1px solid var(--border); text-align: center; position: relative; z-index: 1; transition: all var(--transition); }
+    .step-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
+    .step-number { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: 0 6px 20px rgba(26,82,118,.35); position: relative; z-index: 2; }
+    .step-icon-wrap { width: 80px; height: 80px; border-radius: 24px; background: linear-gradient(135deg, rgba(26,82,118,.08), rgba(39,174,96,.08)); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--primary); margin: 0 auto 20px; transition: all var(--transition); }
+    .step-card:hover .step-icon-wrap { background: linear-gradient(135deg, var(--secondary), #52BE80); color: #fff; box-shadow: 0 8px 24px rgba(39,174,96,.35); }
+    .step-title { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 10px; }
+    .step-desc { font-size: .875rem; color: var(--text-muted); line-height: 1.7; }
+    /* SURVEY */
+    #survey { background: var(--bg-light); }
+    .survey-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .survey-item { position: relative; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); cursor: pointer; background: #dde4eb; }
+    .survey-item:first-child { grid-column: 1 / 3; }
+    .survey-item img { width: 100%; height: 100%; object-fit: cover; min-height: 260px; transition: transform .55s ease; }
+    .survey-item:hover img { transform: scale(1.06); }
+    .survey-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(21,67,96,.7) 0%, transparent 55%); opacity: 0; transition: opacity var(--transition); display: flex; align-items: flex-end; padding: 20px; }
+    .survey-item:hover .survey-overlay { opacity: 1; }
+    .survey-overlay span { color: #fff; font-size: .85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    /* TESTIMONIALS */
+    #testimonials { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, #1A6B45 100%); position: relative; overflow: hidden; }
+    #testimonials::before { content: ''; position: absolute; top: -120px; right: -120px; width: 400px; height: 400px; background: rgba(255,255,255,.04); border-radius: 50%; }
+    #testimonials::after { content: ''; position: absolute; bottom: -80px; left: -80px; width: 300px; height: 300px; background: rgba(255,255,255,.04); border-radius: 50%; }
+    #testimonials .section-tag { background: rgba(255,255,255,.1); color: var(--accent); border-color: rgba(243,156,18,.3); }
+    #testimonials .section-title { color: #fff; }
+    #testimonials .section-subtitle { color: rgba(255,255,255,.7); }
+    .testimonials-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+    .testimonial-card { background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.15); border-radius: var(--radius-md); padding: 36px 32px; backdrop-filter: blur(8px); transition: all var(--transition); }
+    .testimonial-card:hover { background: rgba(255,255,255,.14); transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.2); }
+    .testi-quote-icon { font-size: 3rem; color: var(--accent); opacity: .5; line-height: 1; margin-bottom: 16px; font-family: Georgia, serif; }
+    .testi-text { font-size: 1rem; color: rgba(255,255,255,.9); line-height: 1.8; margin-bottom: 28px; font-style: italic; }
+    .testi-author { display: flex; align-items: center; gap: 14px; }
+    .testi-avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #E67E22); display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .testi-name { font-weight: 700; color: #fff; font-size: .95rem; margin-bottom: 2px; }
+    .testi-location { font-size: .8rem; color: rgba(255,255,255,.6); }
+    .testi-stars { margin-top: 4px; color: var(--accent); font-size: .75rem; }
+    /* CONTACT */
+    #contact { background: var(--bg-white); }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 64px; align-items: start; }
+    .contact-info .section-subtitle { margin-bottom: 40px; }
+    .contact-detail-list { display: flex; flex-direction: column; gap: 24px; margin-bottom: 36px; }
+    .contact-detail { display: flex; align-items: center; gap: 18px; }
+    .contact-detail .cd-icon { width: 50px; height: 50px; border-radius: 14px; background: linear-gradient(135deg, rgba(26,82,118,.1), rgba(39,174,96,.1)); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--primary); flex-shrink: 0; }
+    .cd-label { font-size: .75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 2px; }
+    .cd-value { font-size: .95rem; font-weight: 600; color: var(--text-dark); }
+    .cd-value a { color: var(--primary); }
+    .cd-value a:hover { color: var(--secondary); text-decoration: underline; }
+    .contact-social { display: flex; gap: 12px; }
+    .social-btn { width: 42px; height: 42px; border-radius: 12px; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: .95rem; transition: all var(--transition); }
+    .social-btn:hover { border-color: var(--primary); background: var(--primary); color: #fff; transform: translateY(-3px); }
+    .contact-form { background: var(--bg-light); border-radius: var(--radius-lg); padding: 44px; border: 1px solid var(--border); }
+    .form-title { font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700; color: var(--text-dark); margin-bottom: 28px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: .82rem; font-weight: 600; color: var(--text-dark); margin-bottom: 7px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 13px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: .9rem; font-family: var(--font-body); color: var(--text-dark); background: var(--bg-white); transition: all var(--transition); outline: none; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,82,118,.12); }
+    .form-group textarea { resize: vertical; min-height: 110px; }
+    .form-submit { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; border: none; border-radius: 50px; font-size: 1rem; font-weight: 700; font-family: var(--font-body); cursor: pointer; transition: all var(--transition); display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 8px 24px rgba(26,82,118,.3); }
+    .form-submit:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(26,82,118,.45); }
+    #form-success { background: linear-gradient(135deg, rgba(39,174,96,.1), rgba(39,174,96,.05)); border: 1.5px solid var(--secondary); border-radius: var(--radius-sm); padding: 16px 20px; color: var(--secondary); font-weight: 600; font-size: .9rem; margin-top: 16px; text-align: center; align-items: center; gap: 10px; }
+    /* FOOTER */
+    footer { background: #0D1F2D; color: rgba(255,255,255,.75); padding: 64px 0 0; }
+    .footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 48px; padding-bottom: 48px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .footer-brand .footer-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .footer-logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--secondary), var(--primary-light)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #fff; }
+    .footer-logo-name { font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; color: #fff; }
+    .footer-logo-name span { color: var(--accent); }
+    .footer-tagline { font-size: .875rem; line-height: 1.75; margin-bottom: 24px; color: rgba(255,255,255,.6); }
+    .footer-social { display: flex; gap: 10px; }
+    .footer-social a { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.7); font-size: .85rem; transition: all var(--transition); }
+    .footer-social a:hover { background: var(--primary); border-color: var(--primary); color: #fff; transform: translateY(-3px); }
+    .footer-col h4 { font-family: var(--font-heading); font-size: .85rem; font-weight: 700; color: #fff; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 20px; }
+    .footer-col ul { display: flex; flex-direction: column; gap: 10px; }
+    .footer-col ul li a { font-size: .875rem; color: rgba(255,255,255,.6); transition: color var(--transition); }
+    .footer-col ul li a:hover { color: var(--accent); }
+    .footer-bottom { padding: 20px 0; display: flex; justify-content: space-between; align-items: center; font-size: .8rem; color: rgba(255,255,255,.45); }
+    .footer-bottom a { color: rgba(255,255,255,.6); transition: color var(--transition); }
+    .footer-bottom a:hover { color: var(--accent); }
+    .text-accent { color: var(--accent); }
+    /* RESPONSIVE */
+    @media (max-width: 1100px) { .features-grid { grid-template-columns: repeat(2, 1fr); } .footer-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 900px) { section { padding: 72px 0; } .about-grid { grid-template-columns: 1fr; gap: 48px; } .about-card-float { position: static; margin-top: 16px; width: fit-content; } .about-visual { display: flex; flex-direction: column; } .steps-container { grid-template-columns: 1fr; gap: 20px; } .steps-container::before { display: none; } .testimonials-grid { grid-template-columns: 1fr; } .contact-grid { grid-template-columns: 1fr; gap: 40px; } .hero-stats-inner { flex-wrap: wrap; } .stat-item { min-width: 50%; border-bottom: 1px solid rgba(255,255,255,.1); } }
+    @media (max-width: 768px) { .nav-links { display: none; } .hamburger { display: flex; } .features-grid { grid-template-columns: 1fr; } .survey-grid { grid-template-columns: 1fr 1fr; } .survey-item:first-child { grid-column: 1 / 3; } .form-row { grid-template-columns: 1fr; } .contact-form { padding: 28px 22px; } .footer-grid { grid-template-columns: 1fr; gap: 32px; } .footer-bottom { flex-direction: column; gap: 8px; text-align: center; } }
+    @media (max-width: 480px) { .survey-grid { grid-template-columns: 1fr; } .survey-item:first-child { grid-column: 1 / 2; } .hero-actions { flex-direction: column; align-items: center; } .btn { width: 100%; justify-content: center; } }
+  </style>
+</head>
+<body>
+
+<nav id="navbar" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#hero" class="nav-logo" id="nav-logo" aria-label="AVIRA Home">
+        <div class="logo-icon"><i class="fa-solid fa-tag"></i></div>
+        <span class="logo-text">AVI<span>RA</span></span>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="#about"         id="nav-about">About</a></li>
+        <li><a href="#features"      id="nav-features">Features</a></li>
+        <li><a href="#how-it-works"  id="nav-hiw">How It Works</a></li>
+        <li><a href="#survey"        id="nav-survey">Survey</a></li>
+        <li><a href="#testimonials"  id="nav-testi">Testimonials</a></li>
+        <li><a href="#contact" id="nav-contact" class="nav-cta">Get in Touch</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
+  <a href="#about"        id="m-about">About</a>
+  <a href="#features"     id="m-features">Features</a>
+  <a href="#how-it-works" id="m-hiw">How It Works</a>
+  <a href="#survey"       id="m-survey">On-Ground Survey</a>
+  <a href="#testimonials" id="m-testi">Testimonials</a>
+  <a href="#contact"      id="m-contact">Get in Touch</a>
+</div>
+
+<section id="hero" aria-label="Hero">
+  <div class="hero-video-wrap">
+    <!--
+      VIDEO BACKGROUND
+      Add your video at: assets/bg-video.mp4
+      The fallback background image is: assets/hero-bg.jpg (set in CSS)
+    -->
+    <video id="hero-video" autoplay muted loop playsinline poster="assets/hero-bg.jpg" aria-hidden="true">
+      <source src="assets/bg-video.mp4" type="video/mp4" />
+    </video>
+  </div>
+  <div class="hero-overlay" aria-hidden="true"></div>
+  <div class="hero-particles" id="hero-particles" aria-hidden="true"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><i class="fa-solid fa-satellite-dish"></i> AI-Powered Livestock Intelligence</div>
+    <h1 class="hero-title" id="hero-title">Smart Ear-Wearable for<br /><em>Cattle Health</em></h1>
+    <p class="hero-subtitle" id="hero-subtitle">AVIRA &ndash; Advanced Intelligence Research and Analytics</p>
+    <p class="hero-desc" id="hero-desc">Predict disease. Protect your herd. Empower your farm with real-time AI insights delivered straight to your phone.</p>
+    <div class="hero-actions">
+      <a href="#features"     class="btn btn-primary" id="hero-cta"><i class="fa-solid fa-bolt"></i> Discover AVIRA</a>
+      <a href="#how-it-works" class="btn btn-outline"  id="hero-learn"><i class="fa-solid fa-play"></i> How It Works</a>
+    </div>
+  </div>
+  <div class="scroll-indicator" aria-hidden="true">
+    <div class="scroll-mouse"></div>
+    <span>Scroll</span>
+  </div>
+  <div class="hero-stats" aria-label="Key statistics">
+    <div class="hero-stats-inner">
+      <div class="stat-item"><div class="stat-value">48h</div><div class="stat-label">Early Disease Prediction</div></div>
+      <div class="stat-item"><div class="stat-value">99.2%</div><div class="stat-label">Sensor Accuracy</div></div>
+      <div class="stat-item"><div class="stat-value">5000+</div><div class="stat-label">Cattle Monitored</div></div>
+      <div class="stat-item"><div class="stat-value">12+</div><div class="stat-label">Diseases Detected</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="about" aria-labelledby="about-title">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-visual fade-in">
+        <div class="about-card-main">
+          <div class="about-tag-icon"><i class="fa-solid fa-microchip"></i></div>
+          <h3>Intelligent Ear Tag Technology</h3>
+          <p>AVIRA's ear tag houses a suite of bio-sensors, a low-power processor, and a cellular/LoRa connectivity module &ndash; all in a compact, waterproof enclosure designed for the harshest farm conditions.</p>
+        </div>
+        <div class="about-card-float">
+          <div class="float-icon"><i class="fa-solid fa-shield-heart"></i></div>
+          <div class="float-text"><strong>Diseases Detected</strong><span>Mastitis &middot; FMD &middot; LSD &middot; BRD</span></div>
+        </div>
+      </div>
+      <div class="about-text fade-in delay-2">
+        <span class="section-tag">About AVIRA</span>
+        <h2 class="section-title" id="about-title">The Future of Livestock<br />Health is Here</h2>
+        <p class="section-subtitle">AVIRA is an intelligent ear tag that continuously monitors vital signs, activity, and behaviour of cattle. Using AI-driven analytics, it predicts diseases up to <strong>48 hours</strong> before clinical signs appear, empowering farmers to act early and save their herds.</p>
+        <ul class="about-list">
+          <li class="about-list-item">
+            <div class="list-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+            <div><strong>Continuous Bio-monitoring</strong><p>Tracks temperature, heart rate, rumination cycles, and motion 24/7 without interrupting natural behaviour.</p></div>
+          </li>
+          <li class="about-list-item">
+            <div class="list-icon"><i class="fa-solid fa-brain"></i></div>
+            <div><strong>On-Device AI Processing</strong><p>Edge AI models analyse sensor data locally, reducing latency and functioning in areas with poor connectivity.</p></div>
+          </li>
+          <li class="about-list-item">
+            <div class="list-icon"><i class="fa-solid fa-leaf"></i></div>
+            <div><strong>Designed for Indian Farmers</strong><p>Alerts in regional languages, solar-compatible hardware, and ruggedised for extreme climates and rough terrain.</p></div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" aria-labelledby="features-title">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Why AVIRA</span>
+      <h2 class="section-title" id="features-title">Everything Your Herd Needs</h2>
+      <p class="section-subtitle">Four powerful capabilities in one lightweight ear tag that snaps on in seconds and works silently for months.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card fade-in delay-1" id="feature-1">
+        <span class="feat-number">01</span>
+        <div class="feat-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+        <h3 class="feat-title">Real-time Health Monitoring</h3>
+        <p class="feat-desc">Continuously measures body temperature, heart rate, rumination duration, and activity levels. Deviation alerts sent instantly to your phone.</p>
+      </div>
+      <div class="feature-card fade-in delay-2" id="feature-2">
+        <span class="feat-number">02</span>
+        <div class="feat-icon"><i class="fa-solid fa-brain"></i></div>
+        <h3 class="feat-title">AI-Powered Disease Prediction</h3>
+        <p class="feat-desc">Trained ML models provide early-warning alerts for Mastitis, FMD, LSD, BRD, and more &ndash; up to 48 hours before visible symptoms appear.</p>
+      </div>
+      <div class="feature-card fade-in delay-3" id="feature-3">
+        <span class="feat-number">03</span>
+        <div class="feat-icon"><i class="fa-solid fa-location-dot"></i></div>
+        <h3 class="feat-title">GPS Tracking &amp; Geofencing</h3>
+        <p class="feat-desc">Know where every animal is at all times. Set custom geofence zones and get instant alerts if cattle stray or are moved without your knowledge.</p>
+      </div>
+      <div class="feature-card fade-in delay-4" id="feature-4">
+        <span class="feat-number">04</span>
+        <div class="feat-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+        <h3 class="feat-title">Easy-to-Use Mobile App</h3>
+        <p class="feat-desc">A simple, beautifully designed app available in Hindi, Tamil, Telugu, Kannada, and more. Voice alerts and offline mode included.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works" aria-labelledby="hiw-title">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Process</span>
+      <h2 class="section-title" id="hiw-title">Up and Running in Minutes</h2>
+      <p class="section-subtitle">No technical expertise required. AVIRA is designed so any farmer can set it up and start protecting their herd in three simple steps.</p>
+    </div>
+    <div class="steps-container">
+      <div class="step-card fade-in delay-1" id="step-1">
+        <div class="step-number">01</div>
+        <div class="step-icon-wrap"><i class="fa-solid fa-tag"></i></div>
+        <h3 class="step-title">Attach the AVIRA Ear Tag</h3>
+        <p class="step-desc">Clip the lightweight, IP67-rated AVIRA ear tag onto your cattle's ear just like a conventional identification tag. No tools or training required. The tag activates automatically.</p>
+      </div>
+      <div class="step-card fade-in delay-2" id="step-2">
+        <div class="step-number">02</div>
+        <div class="step-icon-wrap"><i class="fa-solid fa-mobile-screen-button"></i></div>
+        <h3 class="step-title">Pair with the Mobile App</h3>
+        <p class="step-desc">Download the free AVIRA app, scan the QR code on the tag, and your animal is registered. The tag syncs via Bluetooth and transmits data through cellular or LoRa networks.</p>
+      </div>
+      <div class="step-card fade-in delay-3" id="step-3">
+        <div class="step-number">03</div>
+        <div class="step-icon-wrap"><i class="fa-solid fa-bell"></i></div>
+        <h3 class="step-title">Receive Health Alerts &amp; Insights</h3>
+        <p class="step-desc">AVIRA's AI engine analyses sensor data continuously. Receive push notifications for anomalies, weekly health summaries, and predictive disease warnings in your local language.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="survey" aria-labelledby="survey-title">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Field Work</span>
+      <h2 class="section-title" id="survey-title">AVIRA in the Field</h2>
+      <p class="section-subtitle">Snapshots from our on-ground pilot surveys across rural India, validating AVIRA's performance in real farm conditions.</p>
+    </div>
+    <!--
+      SURVEY PHOTO GRID
+      =================
+      To use your own photos:
+        1. Copy your images into the assets/ folder
+        2. Replace each src="assets/surveyN.jpg" with your actual filename
+        3. Update the alt text to describe what each photo shows
+      Recommended size: 800x600 px or larger.
+    -->
+    <div class="survey-grid">
+      <!-- Photo 1 (large, spans 2 columns). REPLACE src below. -->
+      <div class="survey-item fade-in" id="survey-photo-1">
+        <img src="assets/survey1.jpg" alt="Survey Photo 1 - Field team with cattle" loading="lazy" />
+        <div class="survey-overlay"><span><i class="fa-solid fa-camera"></i> Field Team with Cattle &mdash; Rajasthan, 2025</span></div>
+      </div>
+      <!-- Photo 2. REPLACE src below. -->
+      <div class="survey-item fade-in delay-1" id="survey-photo-2">
+        <img src="assets/survey2.jpg" alt="Survey Photo 2 - AVIRA ear tag close-up" loading="lazy" />
+        <div class="survey-overlay"><span><i class="fa-solid fa-camera"></i> AVIRA Ear Tag &mdash; Close-up Detail</span></div>
+      </div>
+      <!-- Photo 3. REPLACE src below. -->
+      <div class="survey-item fade-in delay-2" id="survey-photo-3">
+        <img src="assets/survey3.jpg" alt="Survey Photo 3 - Farmer using AVIRA app" loading="lazy" />
+        <div class="survey-overlay"><span><i class="fa-solid fa-camera"></i> Farmer Using AVIRA Mobile App</span></div>
+      </div>
+      <!-- Photo 4. REPLACE src below. -->
+      <div class="survey-item fade-in delay-3" id="survey-photo-4">
+        <img src="assets/survey4.jpg" alt="Survey Photo 4 - Research team in the field" loading="lazy" />
+        <div class="survey-overlay"><span><i class="fa-solid fa-camera"></i> Research Team &mdash; Data Collection</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="testimonials" aria-labelledby="testi-title">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Farmer Stories</span>
+      <h2 class="section-title" id="testi-title">Trusted by Farmers Across India</h2>
+      <p class="section-subtitle">Hear directly from the farmers whose lives and livelihoods have been transformed by AVIRA.</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card fade-in delay-1" id="testimonial-1">
+        <div class="testi-quote-icon">"</div>
+        <p class="testi-text">"AVIRA gave me an alert two days before my best milking cow showed any signs of mastitis. By the time I called the vet, I already knew what to treat. I saved my cow and almost Rs. 15,000 in losses. This device is a blessing for farmers like me."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">RS</div>
+          <div>
+            <div class="testi-name">Ramesh Singh</div>
+            <div class="testi-location"><i class="fa-solid fa-location-dot" style="font-size:.7rem;margin-right:4px;"></i>Dairy Farmer, Anand, Gujarat</div>
+            <div class="testi-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card fade-in delay-2" id="testimonial-2">
+        <div class="testi-quote-icon">"</div>
+        <p class="testi-text">"I have 60 cattle and could not watch all of them all the time. AVIRA's app tells me if any animal is not eating or moving properly. Last month it caught a fever in one of my bulls early &mdash; the vet confirmed it was the start of FMD. We contained it before it spread. Invaluable."</p>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background: linear-gradient(135deg, #27AE60, #1E8449);">LR</div>
+          <div>
+            <div class="testi-name">Lakshmi Reddy</div>
+            <div class="testi-location"><i class="fa-solid fa-location-dot" style="font-size:.7rem;margin-right:4px;"></i>Livestock Farmer, Nellore, Andhra Pradesh</div>
+            <div class="testi-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" aria-labelledby="contact-title">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-info fade-in">
+        <span class="section-tag">Contact Us</span>
+        <h2 class="section-title" id="contact-title">Let's Connect</h2>
+        <p class="section-subtitle">Interested in AVIRA for your farm, co-operative, or organisation? Reach out &mdash; we would love to talk about how we can help protect your herd.</p>
+        <div class="contact-detail-list">
+          <div class="contact-detail">
+            <div class="cd-icon"><i class="fa-solid fa-envelope"></i></div>
+            <div><div class="cd-label">Email</div><div class="cd-value"><a href="mailto:info@avira.agri" id="contact-email">info@avira.agri</a></div></div>
+          </div>
+          <div class="contact-detail">
+            <div class="cd-icon"><i class="fa-solid fa-phone"></i></div>
+            <div><div class="cd-label">Phone</div><div class="cd-value"><a href="tel:+91XXXXXXXXXX" id="contact-phone">+91-XXX-XXX-XXXX</a></div></div>
+          </div>
+          <div class="contact-detail">
+            <div class="cd-icon"><i class="fa-solid fa-location-dot"></i></div>
+            <div><div class="cd-label">Headquarters</div><div class="cd-value" id="contact-address">AgriTech Hub, Bengaluru, Karnataka, India &ndash; 560 001</div></div>
+          </div>
+          <div class="contact-detail">
+            <div class="cd-icon"><i class="fa-solid fa-clock"></i></div>
+            <div><div class="cd-label">Support Hours</div><div class="cd-value" id="contact-hours">Mon &ndash; Sat, 8:00 AM &ndash; 8:00 PM IST</div></div>
+          </div>
+        </div>
+        <div class="contact-social">
+          <a href="#" class="social-btn" id="social-twitter"   aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+          <a href="#" class="social-btn" id="social-linkedin"  aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+          <a href="#" class="social-btn" id="social-instagram" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#" class="social-btn" id="social-youtube"   aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="contact-form fade-in delay-2">
+        <h3 class="form-title"><i class="fa-solid fa-paper-plane text-accent"></i>&nbsp; Send Us a Message</h3>
+        <form id="contact-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="form-name">Full Name *</label>
+              <input type="text" id="form-name" name="name" placeholder="e.g. Ramesh Kumar" required />
+            </div>
+            <div class="form-group">
+              <label for="form-phone">Phone Number</label>
+              <input type="tel" id="form-phone" name="phone" placeholder="+91-XXXXX-XXXXX" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="form-email">Email Address *</label>
+            <input type="email" id="form-email" name="email" placeholder="you@example.com" required />
+          </div>
+          <div class="form-group">
+            <label for="form-interest">I am interested in</label>
+            <select id="form-interest" name="interest">
+              <option value="">Select an option</option>
+              <option value="demo">Product Demo</option>
+              <option value="pilot">Pilot Programme</option>
+              <option value="purchase">Bulk Purchase</option>
+              <option value="partnership">Partnership / Research</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="form-message">Message *</label>
+            <textarea id="form-message" name="message" placeholder="Tell us about your farm or how we can help..." required></textarea>
+          </div>
+          <button type="submit" class="form-submit" id="form-submit-btn">
+            <i class="fa-solid fa-paper-plane"></i> Send Message
+          </button>
+          <div id="form-success" role="alert" aria-live="polite" style="display:none;">
+            <i class="fa-solid fa-circle-check"></i> Thank you! We will get back to you within 24 hours.
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <div class="footer-logo-icon"><i class="fa-solid fa-tag"></i></div>
+          <span class="footer-logo-name">AVI<span>RA</span></span>
+        </div>
+        <p class="footer-tagline">Advanced Intelligence Research and Analytics.<br />Empowering farmers with AI-driven cattle health monitoring for a healthier, more productive livestock sector.</p>
+        <div class="footer-social">
+          <a href="#" id="footer-twitter"   aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+          <a href="#" id="footer-linkedin"  aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+          <a href="#" id="footer-instagram" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#" id="footer-youtube"   aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="#about"        id="footer-nav-about">About AVIRA</a></li>
+          <li><a href="#features"     id="footer-nav-features">Features</a></li>
+          <li><a href="#how-it-works" id="footer-nav-hiw">How It Works</a></li>
+          <li><a href="#survey"       id="footer-nav-survey">On-Ground Survey</a></li>
+          <li><a href="#testimonials" id="footer-nav-testi">Testimonials</a></li>
+          <li><a href="#contact"      id="footer-nav-contact">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Technology</h4>
+        <ul>
+          <li><a href="#" id="footer-tech-1">Bio-Sensor Suite</a></li>
+          <li><a href="#" id="footer-tech-2">Edge AI Module</a></li>
+          <li><a href="#" id="footer-tech-3">LoRa &amp; Cellular</a></li>
+          <li><a href="#" id="footer-tech-4">Mobile App (iOS &amp; Android)</a></li>
+          <li><a href="#" id="footer-tech-5">Cloud Dashboard</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Support</h4>
+        <ul>
+          <li><a href="#" id="footer-sup-1">FAQs</a></li>
+          <li><a href="#" id="footer-sup-2">User Manual</a></li>
+          <li><a href="#" id="footer-sup-3">Privacy Policy</a></li>
+          <li><a href="#" id="footer-sup-4">Terms of Service</a></li>
+          <li><a href="mailto:info@avira.agri" id="footer-sup-5">info@avira.agri</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span id="footer-year">2025</span> AVIRA &ndash; Advanced Intelligence Research and Analytics. All rights reserved.</span>
+      <span>Made with <i class="fa-solid fa-heart text-accent" aria-label="love"></i> for Indian Farmers</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // 1. NAVBAR scroll effect
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => { navbar.classList.toggle('scrolled', window.scrollY > 60); }, { passive: true });
+  navbar.classList.toggle('scrolled', window.scrollY > 60);
+
+  // 2. HAMBURGER mobile menu
+  const hamburger  = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  hamburger.addEventListener('click', () => {
+    const open = mobileMenu.classList.toggle('open');
+    hamburger.classList.toggle('open', open);
+    hamburger.setAttribute('aria-expanded', open);
+  });
+  mobileMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      mobileMenu.classList.remove('open');
+      hamburger.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // 3. HERO PARTICLES
+  (function() {
+    const c = document.getElementById('hero-particles');
+    for (let i = 0; i < 28; i++) {
+      const d = document.createElement('span');
+      const s = Math.random() * 4 + 2;
+      d.style.cssText = 'left:' + (Math.random() * 100) + '%;width:' + s + 'px;height:' + s + 'px;animation-duration:' + (Math.random() * 12 + 8) + 's;animation-delay:' + (Math.random() * 10) + 's;';
+      c.appendChild(d);
+    }
+  })();
+
+  // 4. SMOOTH SCROLL for all anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', function(e) {
+      const t = document.querySelector(this.getAttribute('href'));
+      if (t) { e.preventDefault(); window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 72, behavior: 'smooth' }); }
+    });
+  });
+
+  // 5. INTERSECTION OBSERVER - fade-in on scroll
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); obs.unobserve(entry.target); } });
+  }, { threshold: 0.12, rootMargin: '0px 0px -48px 0px' });
+  document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+  // 6. CONTACT FORM
+  const form      = document.getElementById('contact-form');
+  const successEl = document.getElementById('form-success');
+  const submitBtn = document.getElementById('form-submit-btn');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const name  = document.getElementById('form-name').value.trim();
+    const email = document.getElementById('form-email').value.trim();
+    const msg   = document.getElementById('form-message').value.trim();
+    if (!name || !email || !msg) { alert('Please fill in all required fields.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Please enter a valid email address.'); return; }
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+    submitBtn.disabled = true;
+    setTimeout(() => {
+      form.reset();
+      submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Message';
+      submitBtn.disabled = false;
+      successEl.style.display = 'flex';
+      setTimeout(() => { successEl.style.display = 'none'; }, 5000);
+    }, 1800);
+  });
+
+  // 7. FOOTER YEAR - auto-update
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+  // 8. VIDEO - pause when not in viewport (performance)
+  const heroVideo = document.getElementById('hero-video');
+  const heroEl    = document.getElementById('hero');
+  if (heroVideo) {
+    new IntersectionObserver(([entry]) => {
+      entry.isIntersecting ? heroVideo.play().catch(() => {}) : heroVideo.pause();
+    }, { threshold: 0.01 }).observe(heroEl);
+  }
+</script>
+</body>
+</html>
