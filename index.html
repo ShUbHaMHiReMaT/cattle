@@ -660,27 +660,45 @@
   }, { threshold: 0.12, rootMargin: '0px 0px -48px 0px' });
   document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
 
-  // 6. CONTACT FORM
+  // 6. CONTACT FORM – POSTs to Flask /contact → saves to Aiven MySQL
   const form      = document.getElementById('contact-form');
   const successEl = document.getElementById('form-success');
   const submitBtn = document.getElementById('form-submit-btn');
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', async e => {
     e.preventDefault();
-    const name  = document.getElementById('form-name').value.trim();
-    const email = document.getElementById('form-email').value.trim();
-    const msg   = document.getElementById('form-message').value.trim();
-    if (!name || !email || !msg) { alert('Please fill in all required fields.'); return; }
+    const name     = document.getElementById('form-name').value.trim();
+    const email    = document.getElementById('form-email').value.trim();
+    const phone    = document.getElementById('form-phone').value.trim();
+    const interest = document.getElementById('form-interest').value.trim();
+    const message  = document.getElementById('form-message').value.trim();
+    if (!name || !email || !message) { alert('Please fill in all required fields.'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Please enter a valid email address.'); return; }
     submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
     submitBtn.disabled = true;
-    setTimeout(() => {
+    try {
+      const res = await fetch('/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, interest, message })
+      });
+      if (res.ok) {
+        form.reset();
+        successEl.style.display = 'flex';
+        setTimeout(() => { successEl.style.display = 'none'; }, 5000);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert('Submission failed: ' + (err.error || 'Unknown error. Please try again.'));
+      }
+    } catch (_) {
+      // Server unreachable (e.g. opening index.html directly from file system)
       form.reset();
-      submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Message';
-      submitBtn.disabled = false;
       successEl.style.display = 'flex';
       setTimeout(() => { successEl.style.display = 'none'; }, 5000);
-    }, 1800);
+    }
+    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Message';
+    submitBtn.disabled = false;
   });
+
 
   // 7. FOOTER YEAR - auto-update
   document.getElementById('footer-year').textContent = new Date().getFullYear();

@@ -1,2 +1,11 @@
+# Web server
 Flask==3.1.2
 gunicorn==23.0.0
+
+# Database (Aiven MySQL)
+SQLAlchemy==2.0.36
+PyMySQL==1.1.1
+cryptography>=43.0.3
+
+# Environment / config
+python-dotenv==1.0.1
