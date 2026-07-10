@@ -59,12 +59,33 @@
     #navbar.scrolled { background: rgba(26,82,118,.97); backdrop-filter: blur(12px); box-shadow: 0 4px 24px rgba(0,0,0,.2); }
     .nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
     .nav-logo { display: flex; align-items: center; }
-    .nav-logo img { width: 132px; height: 56px; object-fit: contain; }
+    .nav-logo img { width: 170px; height: 68px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); }
     .nav-links { display: flex; align-items: center; gap: 8px; }
     .nav-links a { color: rgba(255,255,255,.85); font-size: .875rem; font-weight: 500; padding: 8px 14px; border-radius: 8px; transition: color var(--transition), background var(--transition); }
     .nav-links a:hover { color: #fff; background: rgba(255,255,255,.12); }
     .nav-cta { background: var(--accent) !important; color: var(--text-dark) !important; font-weight: 700 !important; border-radius: 50px !important; padding: 8px 20px !important; }
     .nav-cta:hover { background: var(--accent-dark) !important; }
+    /* AVIRA product badge */
+    .avira-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, rgba(39,174,96,.18), rgba(26,82,118,.28));
+      border: 1px solid rgba(39,174,96,.45);
+      border-radius: 50px; padding: 5px 14px 5px 8px;
+      backdrop-filter: blur(8px);
+      text-decoration: none; transition: all .25s;
+      box-shadow: 0 0 12px rgba(39,174,96,.2);
+    }
+    .avira-badge:hover { background: linear-gradient(135deg,rgba(39,174,96,.28),rgba(26,82,118,.4)); box-shadow: 0 0 20px rgba(39,174,96,.35); transform: translateY(-1px); }
+    .avira-badge-icon {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--secondary), #52BE80);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; flex-shrink: 0;
+    }
+    .avira-badge-text { display: flex; flex-direction: column; line-height: 1.1; }
+    .avira-badge-name { font-family: var(--font-heading); font-size: 1rem; font-weight: 800; color: #fff; letter-spacing: .08em; }
+    .avira-badge-sub  { font-size: .62rem; font-weight: 500; color: rgba(255,255,255,.6); letter-spacing: .05em; text-transform: uppercase; }
+    @media(max-width:900px) { .avira-badge { display: none; } }
     .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; background: none; border: none; }
     .hamburger span { display: block; width: 24px; height: 2px; background: #fff; border-radius: 4px; transition: all var(--transition); }
     .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
@@ -239,7 +260,7 @@
   <div class="container">
     <div class="nav-inner">
       <a href="#hero" class="nav-logo" id="nav-logo" aria-label="AVIRA Home">
-        <img src="assets/logo2.jpeg" alt="Praniva Technologies Pvt Ltd" />
+        <img src="assets/logo2-removebg-preview.png" alt="Praniva Technologies Pvt Ltd" />
       </a>
       <ul class="nav-links" role="list">
         <li><a href="#about"         id="nav-about">About</a></li>
@@ -249,6 +270,14 @@
         <li><a href="#testimonials"  id="nav-testi">Testimonials</a></li>
         <li><a href="#contact" id="nav-contact" class="nav-cta">Get in Touch</a></li>
       </ul>
+      <!-- AVIRA product badge (top-right) -->
+      <a href="#hero" class="avira-badge" id="avira-badge" aria-label="AVIRA product">
+        <div class="avira-badge-icon">&#128278;</div>
+        <div class="avira-badge-text">
+          <span class="avira-badge-name">AVIRA</span>
+          <span class="avira-badge-sub">by Praniva</span>
+        </div>
+      </a>
       <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
