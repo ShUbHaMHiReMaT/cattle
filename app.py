@@ -1,52 +1,35 @@
 import os
-from flask import Flask, send_from_directory, request, jsonify
+from flask import Flask, send_from_directory, request, jsonify, Response
 from dotenv import load_dotenv
 
-# Load .env (local dev only - ignored on production servers)
 load_dotenv()
 
 app = Flask(__name__, static_folder="assets")
 
-# ---------------------------------------------------------------------------
-# Database (Aiven MySQL)
-# Set DATABASE_URL in your Render / Railway / Heroku environment variables.
-# Format: mysql+pymysql://avnadmin:PASSWORD@HOST:PORT/defaultdb
-# ---------------------------------------------------------------------------
 _DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
-
-# Lazy engine -- created on first DB request so the app always boots cleanly
+_ADMIN_SECRET = os.getenv("ADMIN_SECRET", "avira-admin-2025")  # change in Render env vars
 _engine = None
 
 
 def get_engine():
-    """Return a SQLAlchemy engine, lazily created on first call."""
     global _engine
     if _engine is not None:
         return _engine
     if not _DATABASE_URL:
-        raise RuntimeError(
-            "DATABASE_URL is not set. "
-            "Add it in your platform's environment variables dashboard."
-        )
+        raise RuntimeError("DATABASE_URL environment variable is not set.")
     from sqlalchemy import create_engine
-
-    # Keep the URL clean -- strip any existing SSL/charset params we will add
     base_url = _DATABASE_URL.split("?")[0]
     url = base_url + "?charset=utf8mb4"
-
-    # PyMySQL SSL: pass via connect_args, NOT URL query params.
-    # An empty dict tells PyMySQL to enable TLS without certificate verification.
     _engine = create_engine(
         url,
-        pool_pre_ping=True,      # auto-reconnect on stale connections
-        pool_recycle=300,        # recycle connections every 5 min (Aiven idle timeout)
-        connect_args={"ssl": {}},  # enable TLS (required by Aiven)
+        pool_pre_ping=True,
+        pool_recycle=300,
+        connect_args={"ssl": {}},
     )
     return _engine
 
 
 def init_db():
-    """Create the contact_submissions table if it does not exist."""
     from sqlalchemy import text
     with get_engine().connect() as conn:
         conn.execute(text("""
@@ -63,7 +46,9 @@ def init_db():
         conn.commit()
 
 
-# Routes -------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
 
 @app.route("/")
 def home():
@@ -77,33 +62,20 @@ def assets(filename):
 
 @app.route("/health")
 def health():
-    return jsonify({
-        "status":  "online",
-        "project": "AVIRA",
-        "message": "Server is running",
-        "db_url_set": bool(_DATABASE_URL),
-    })
+    return jsonify({"status": "online", "project": "AVIRA", "db_url_set": bool(_DATABASE_URL)})
 
 
 @app.route("/db-status")
 def db_status():
-    """Live database connectivity check -- visit in browser to diagnose."""
     from sqlalchemy import text
     if not _DATABASE_URL:
-        return jsonify({
-            "db": "error",
-            "reason": "DATABASE_URL environment variable is not set on this server.",
-            "fix": "Add DATABASE_URL in your Render > Environment settings."
-        }), 500
+        return jsonify({"db": "error", "reason": "DATABASE_URL not set on this server."}), 500
     try:
         with get_engine().connect() as conn:
             ver = conn.execute(text("SELECT VERSION()")).scalar()
             conn.execute(text("SELECT COUNT(*) FROM contact_submissions"))
-        return jsonify({
-            "db": "connected",
-            "mysql_version": ver,
-            "host": _DATABASE_URL.split("@")[-1].split("/")[0],
-        })
+        return jsonify({"db": "connected", "mysql_version": ver,
+                        "host": _DATABASE_URL.split("@")[-1].split("/")[0]})
     except Exception as e:
         return jsonify({"db": "error", "detail": str(e)}), 500
 
@@ -117,31 +89,170 @@ def contact():
     phone    = (data.get("phone",    "") or "").strip()
     interest = (data.get("interest", "") or "").strip()
     message  = (data.get("message",  "") or "").strip()
-
     if not name or not email or not message:
         return jsonify({"error": "name, email, and message are required"}), 400
-
     try:
-        # Ensure table exists (idempotent)
         init_db()
         with get_engine().connect() as conn:
             conn.execute(text("""
-                INSERT INTO contact_submissions
-                    (name, email, phone, interest, message)
-                VALUES
-                    (:name, :email, :phone, :interest, :message)
+                INSERT INTO contact_submissions (name, email, phone, interest, message)
+                VALUES (:name, :email, :phone, :interest, :message)
             """), {"name": name, "email": email, "phone": phone,
                    "interest": interest, "message": message})
             conn.commit()
         return jsonify({"success": True, "message": "Submission saved."})
     except RuntimeError as e:
-        # DATABASE_URL not configured on this server
         return jsonify({"error": "Server configuration error", "detail": str(e)}), 503
     except Exception as e:
         return jsonify({"error": "Database error", "detail": str(e)}), 500
 
 
-# Entry point ---------------------------------------------------------------
+@app.route("/admin")
+def admin():
+    """
+    Password-protected admin dashboard.
+    Access: https://your-site.com/admin?key=YOUR_ADMIN_SECRET
+    Set ADMIN_SECRET in Render environment variables to change the password.
+    """
+    from sqlalchemy import text
+
+    # Simple key-based auth
+    key = request.args.get("key", "")
+    if key != _ADMIN_SECRET:
+        return Response(
+            "401 Unauthorized. Append ?key=YOUR_ADMIN_SECRET to the URL.",
+            status=401,
+            mimetype="text/plain"
+        )
+
+    try:
+        with get_engine().connect() as conn:
+            rows = conn.execute(text(
+                "SELECT id, name, email, phone, interest, message, created_at "
+                "FROM contact_submissions ORDER BY created_at DESC"
+            )).fetchall()
+    except Exception as e:
+        rows = []
+        error_msg = str(e)
+    else:
+        error_msg = None
+
+    # Build rows HTML
+    if rows:
+        tbody = ""
+        for r in rows:
+            msg_escaped = str(r[5]).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            tbody += f"""
+            <tr>
+              <td>{r[0]}</td>
+              <td>{r[1]}</td>
+              <td><a href="mailto:{r[2]}">{r[2]}</a></td>
+              <td>{r[3] or "-"}</td>
+              <td><span class="badge">{r[4] or "-"}</span></td>
+              <td class="msg">{msg_escaped}</td>
+              <td class="date">{r[6]}</td>
+            </tr>"""
+        table_html = f"""
+        <div class="count">Showing <strong>{len(rows)}</strong> submission(s)</div>
+        <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Name</th><th>Email</th><th>Phone</th>
+              <th>Interest</th><th>Message</th><th>Date (UTC)</th>
+            </tr>
+          </thead>
+          <tbody>{tbody}</tbody>
+        </table>
+        </div>"""
+    elif error_msg:
+        table_html = f'<div class="empty error">DB Error: {error_msg}</div>'
+    else:
+        table_html = '<div class="empty">No submissions yet.</div>'
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AVIRA Admin – Contact Submissions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {{
+      --primary: #1A5276; --green: #27AE60; --gold: #F39C12;
+      --bg: #F0F4F8; --white: #fff; --text: #2C3E50; --muted: #7F8C8D;
+      --border: #D5DCE4; --radius: 12px;
+    }}
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{ font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }}
+    .header {{
+      background: linear-gradient(135deg, var(--primary), #2471A3);
+      padding: 24px 40px; display: flex; align-items: center; gap: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    }}
+    .header h1 {{ color: #fff; font-size: 1.4rem; font-weight: 700; }}
+    .header .logo {{
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--green), #52BE80);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: #fff; flex-shrink: 0;
+    }}
+    .header .sub {{ color: rgba(255,255,255,.7); font-size: .85rem; margin-top: 2px; }}
+    .refresh {{
+      margin-left: auto;
+      background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+      color: #fff; padding: 8px 18px; border-radius: 8px; font-size: .85rem;
+      font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: background .2s;
+    }}
+    .refresh:hover {{ background: rgba(255,255,255,.25); }}
+    .main {{ padding: 32px 40px; max-width: 1400px; margin: 0 auto; }}
+    .count {{ margin-bottom: 16px; font-size: .9rem; color: var(--muted); }}
+    .count strong {{ color: var(--text); }}
+    .table-wrap {{ overflow-x: auto; border-radius: var(--radius); box-shadow: 0 2px 16px rgba(0,0,0,.08); }}
+    table {{ width: 100%; border-collapse: collapse; background: var(--white); font-size: .875rem; }}
+    thead tr {{ background: var(--primary); }}
+    thead th {{ color: #fff; padding: 14px 16px; text-align: left; font-weight: 600;
+                font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }}
+    tbody tr {{ border-bottom: 1px solid var(--border); transition: background .15s; }}
+    tbody tr:last-child {{ border-bottom: none; }}
+    tbody tr:hover {{ background: #F7FAFF; }}
+    td {{ padding: 14px 16px; vertical-align: top; }}
+    td a {{ color: var(--primary); }}
+    .badge {{
+      display: inline-block; padding: 3px 10px; border-radius: 50px;
+      background: rgba(26,82,118,.1); color: var(--primary);
+      font-size: .75rem; font-weight: 600; white-space: nowrap;
+    }}
+    .msg {{ max-width: 320px; color: var(--muted); line-height: 1.5; }}
+    .date {{ white-space: nowrap; color: var(--muted); font-size: .8rem; }}
+    .empty {{ background: var(--white); border-radius: var(--radius); padding: 48px;
+              text-align: center; color: var(--muted); font-size: 1rem;
+              box-shadow: 0 2px 12px rgba(0,0,0,.07); }}
+    .empty.error {{ color: #E74C3C; background: #FEF9F9; }}
+    @media(max-width:768px) {{ .main {{ padding: 20px; }} .header {{ padding: 16px 20px; }} }}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">&#128278;</div>
+    <div>
+      <h1>AVIRA Admin</h1>
+      <div class="sub">Contact Form Submissions</div>
+    </div>
+    <a class="refresh" href="/admin?key={key}">&#8635; Refresh</a>
+  </div>
+  <div class="main">
+    {table_html}
+  </div>
+</body>
+</html>"""
+    return html
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     if _DATABASE_URL:
         try:
