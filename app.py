@@ -9,34 +9,38 @@ app = Flask(__name__, static_folder="assets")
 
 # ---------------------------------------------------------------------------
 # Database (Aiven MySQL)
-# Set DATABASE_URL in your hosting platform environment variables dashboard.
-# Format: mysql+pymysql://USER:PASSWORD@HOST:PORT/DBNAME
+# Set DATABASE_URL in your Render / Railway / Heroku environment variables.
+# Format: mysql+pymysql://avnadmin:PASSWORD@HOST:PORT/defaultdb
 # ---------------------------------------------------------------------------
 _DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
-# Lazy engine -- created on first request so the app boots even if DB is down
+# Lazy engine -- created on first DB request so the app always boots cleanly
 _engine = None
 
 
 def get_engine():
-    """Return a SQLAlchemy engine, creating it lazily on first call."""
+    """Return a SQLAlchemy engine, lazily created on first call."""
     global _engine
     if _engine is not None:
         return _engine
     if not _DATABASE_URL:
-        raise RuntimeError("DATABASE_URL environment variable is not set.")
+        raise RuntimeError(
+            "DATABASE_URL is not set. "
+            "Add it in your platform's environment variables dashboard."
+        )
     from sqlalchemy import create_engine
-    url = _DATABASE_URL
-    # Append charset if missing
-    if "charset" not in url:
-        url += ("&" if "?" in url else "?") + "charset=utf8mb4"
-    # Tell PyMySQL to use SSL (required by Aiven)
-    if "ssl_disabled" not in url:
-        url += ("&" if "?" in url else "?") + "ssl_disabled=false"
+
+    # Keep the URL clean -- strip any existing SSL/charset params we will add
+    base_url = _DATABASE_URL.split("?")[0]
+    url = base_url + "?charset=utf8mb4"
+
+    # PyMySQL SSL: pass via connect_args, NOT URL query params.
+    # An empty dict tells PyMySQL to enable TLS without certificate verification.
     _engine = create_engine(
         url,
-        pool_pre_ping=True,   # auto-reconnect on stale connections
-        pool_recycle=300,     # recycle connections every 5 min
+        pool_pre_ping=True,      # auto-reconnect on stale connections
+        pool_recycle=300,        # recycle connections every 5 min (Aiven idle timeout)
+        connect_args={"ssl": {}},  # enable TLS (required by Aiven)
     )
     return _engine
 
@@ -76,17 +80,30 @@ def health():
     return jsonify({
         "status":  "online",
         "project": "AVIRA",
-        "message": "Server is running"
+        "message": "Server is running",
+        "db_url_set": bool(_DATABASE_URL),
     })
 
 
 @app.route("/db-status")
 def db_status():
+    """Live database connectivity check -- visit in browser to diagnose."""
     from sqlalchemy import text
+    if not _DATABASE_URL:
+        return jsonify({
+            "db": "error",
+            "reason": "DATABASE_URL environment variable is not set on this server.",
+            "fix": "Add DATABASE_URL in your Render > Environment settings."
+        }), 500
     try:
         with get_engine().connect() as conn:
-            conn.execute(text("SELECT 1"))
-        return jsonify({"db": "connected", "host": os.getenv("DB_HOST", "aiven")})
+            ver = conn.execute(text("SELECT VERSION()")).scalar()
+            conn.execute(text("SELECT COUNT(*) FROM contact_submissions"))
+        return jsonify({
+            "db": "connected",
+            "mysql_version": ver,
+            "host": _DATABASE_URL.split("@")[-1].split("/")[0],
+        })
     except Exception as e:
         return jsonify({"db": "error", "detail": str(e)}), 500
 
@@ -105,6 +122,8 @@ def contact():
         return jsonify({"error": "name, email, and message are required"}), 400
 
     try:
+        # Ensure table exists (idempotent)
+        init_db()
         with get_engine().connect() as conn:
             conn.execute(text("""
                 INSERT INTO contact_submissions
@@ -115,6 +134,9 @@ def contact():
                    "interest": interest, "message": message})
             conn.commit()
         return jsonify({"success": True, "message": "Submission saved."})
+    except RuntimeError as e:
+        # DATABASE_URL not configured on this server
+        return jsonify({"error": "Server configuration error", "detail": str(e)}), 503
     except Exception as e:
         return jsonify({"error": "Database error", "detail": str(e)}), 500
 
@@ -127,5 +149,7 @@ if __name__ == "__main__":
             print("[DB] Connected to Aiven MySQL and table ensured.")
         except Exception as e:
             print(f"[DB] Warning - could not initialise database: {e}")
+    else:
+        print("[DB] Warning - DATABASE_URL not set, running without database.")
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
