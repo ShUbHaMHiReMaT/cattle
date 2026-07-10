@@ -1,5 +1,5 @@
 import os
-from flask import Flask, send_from_directory, request, jsonify, Response
+from flask import Flask, send_from_directory, request, jsonify, Response, redirect, url_for
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -7,7 +7,7 @@ load_dotenv()
 app = Flask(__name__, static_folder="assets")
 
 _DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
-_ADMIN_SECRET = os.getenv("ADMIN_SECRET", "avira-admin-2025")  # change in Render env vars
+_ADMIN_SECRET = os.getenv("ADMIN_SECRET", "avira-admin-2025")
 _engine = None
 
 
@@ -73,7 +73,6 @@ def db_status():
     try:
         with get_engine().connect() as conn:
             ver = conn.execute(text("SELECT VERSION()")).scalar()
-            conn.execute(text("SELECT COUNT(*) FROM contact_submissions"))
         return jsonify({"db": "connected", "mysql_version": ver,
                         "host": _DATABASE_URL.split("@")[-1].split("/")[0]})
     except Exception as e:
@@ -107,23 +106,39 @@ def contact():
         return jsonify({"error": "Database error", "detail": str(e)}), 500
 
 
+# ---------------------------------------------------------------------------
+# Admin – delete a single submission
+# ---------------------------------------------------------------------------
+@app.route("/admin/delete/<int:row_id>", methods=["POST"])
+def admin_delete(row_id):
+    from sqlalchemy import text
+    key = request.form.get("key", "")
+    if key != _ADMIN_SECRET:
+        return Response("401 Unauthorized.", status=401, mimetype="text/plain")
+    try:
+        with get_engine().connect() as conn:
+            conn.execute(text("DELETE FROM contact_submissions WHERE id = :id"), {"id": row_id})
+            conn.commit()
+    except Exception as e:
+        return Response(f"DB error: {e}", status=500, mimetype="text/plain")
+    return redirect(f"/admin?key={key}&deleted={row_id}")
+
+
+# ---------------------------------------------------------------------------
+# Admin dashboard – view all submissions
+# ---------------------------------------------------------------------------
 @app.route("/admin")
 def admin():
-    """
-    Password-protected admin dashboard.
-    Access: https://your-site.com/admin?key=YOUR_ADMIN_SECRET
-    Set ADMIN_SECRET in Render environment variables to change the password.
-    """
     from sqlalchemy import text
 
-    # Simple key-based auth
     key = request.args.get("key", "")
     if key != _ADMIN_SECRET:
         return Response(
             "401 Unauthorized. Append ?key=YOUR_ADMIN_SECRET to the URL.",
-            status=401,
-            mimetype="text/plain"
+            status=401, mimetype="text/plain"
         )
+
+    deleted_id = request.args.get("deleted", "")
 
     try:
         with get_engine().connect() as conn:
@@ -131,26 +146,34 @@ def admin():
                 "SELECT id, name, email, phone, interest, message, created_at "
                 "FROM contact_submissions ORDER BY created_at DESC"
             )).fetchall()
+        error_msg = None
     except Exception as e:
         rows = []
         error_msg = str(e)
-    else:
-        error_msg = None
 
     # Build rows HTML
     if rows:
         tbody = ""
         for r in rows:
-            msg_escaped = str(r[5]).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            msg_e = str(r[5]).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
             tbody += f"""
-            <tr>
-              <td>{r[0]}</td>
-              <td>{r[1]}</td>
+            <tr id="row-{r[0]}">
+              <td class="id-col">{r[0]}</td>
+              <td><strong>{r[1]}</strong></td>
               <td><a href="mailto:{r[2]}">{r[2]}</a></td>
               <td>{r[3] or "-"}</td>
               <td><span class="badge">{r[4] or "-"}</span></td>
-              <td class="msg">{msg_escaped}</td>
+              <td class="msg">{msg_e}</td>
               <td class="date">{r[6]}</td>
+              <td>
+                <form method="POST" action="/admin/delete/{r[0]}"
+                      onsubmit="return confirm('Delete submission from {r[1]}?')">
+                  <input type="hidden" name="key" value="{key}" />
+                  <button type="submit" class="del-btn" title="Delete">
+                    &#128465; Delete
+                  </button>
+                </form>
+              </td>
             </tr>"""
         table_html = f"""
         <div class="count">Showing <strong>{len(rows)}</strong> submission(s)</div>
@@ -159,7 +182,7 @@ def admin():
           <thead>
             <tr>
               <th>#</th><th>Name</th><th>Email</th><th>Phone</th>
-              <th>Interest</th><th>Message</th><th>Date (UTC)</th>
+              <th>Interest</th><th>Message</th><th>Date (UTC)</th><th>Action</th>
             </tr>
           </thead>
           <tbody>{tbody}</tbody>
@@ -170,6 +193,10 @@ def admin():
     else:
         table_html = '<div class="empty">No submissions yet.</div>'
 
+    toast = ""
+    if deleted_id:
+        toast = f'<div class="toast" id="toast">Submission #{deleted_id} deleted successfully.</div>'
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -179,7 +206,7 @@ def admin():
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     :root {{
-      --primary: #1A5276; --green: #27AE60; --gold: #F39C12;
+      --primary: #1A5276; --green: #27AE60; --gold: #F39C12; --red: #E74C3C;
       --bg: #F0F4F8; --white: #fff; --text: #2C3E50; --muted: #7F8C8D;
       --border: #D5DCE4; --radius: 12px;
     }}
@@ -191,45 +218,58 @@ def admin():
       box-shadow: 0 4px 16px rgba(0,0,0,.15);
     }}
     .header h1 {{ color: #fff; font-size: 1.4rem; font-weight: 700; }}
-    .header .logo {{
-      width: 40px; height: 40px; border-radius: 10px;
+    .logo {{ width: 40px; height: 40px; border-radius: 10px;
       background: linear-gradient(135deg, var(--green), #52BE80);
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem; color: #fff; flex-shrink: 0;
-    }}
-    .header .sub {{ color: rgba(255,255,255,.7); font-size: .85rem; margin-top: 2px; }}
-    .refresh {{
-      margin-left: auto;
-      background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
-      color: #fff; padding: 8px 18px; border-radius: 8px; font-size: .85rem;
-      font-weight: 600; cursor: pointer; text-decoration: none;
-      transition: background .2s;
-    }}
+      font-size: 1.1rem; color: #fff; flex-shrink: 0; }}
+    .sub {{ color: rgba(255,255,255,.7); font-size: .85rem; margin-top: 2px; }}
+    .refresh {{ margin-left: auto; background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3); color: #fff; padding: 8px 18px;
+      border-radius: 8px; font-size: .85rem; font-weight: 600; cursor: pointer;
+      text-decoration: none; transition: background .2s; }}
     .refresh:hover {{ background: rgba(255,255,255,.25); }}
-    .main {{ padding: 32px 40px; max-width: 1400px; margin: 0 auto; }}
+    .main {{ padding: 32px 40px; max-width: 1500px; margin: 0 auto; }}
     .count {{ margin-bottom: 16px; font-size: .9rem; color: var(--muted); }}
     .count strong {{ color: var(--text); }}
     .table-wrap {{ overflow-x: auto; border-radius: var(--radius); box-shadow: 0 2px 16px rgba(0,0,0,.08); }}
     table {{ width: 100%; border-collapse: collapse; background: var(--white); font-size: .875rem; }}
     thead tr {{ background: var(--primary); }}
     thead th {{ color: #fff; padding: 14px 16px; text-align: left; font-weight: 600;
-                font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }}
+      font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }}
     tbody tr {{ border-bottom: 1px solid var(--border); transition: background .15s; }}
     tbody tr:last-child {{ border-bottom: none; }}
     tbody tr:hover {{ background: #F7FAFF; }}
-    td {{ padding: 14px 16px; vertical-align: top; }}
+    td {{ padding: 12px 16px; vertical-align: top; }}
     td a {{ color: var(--primary); }}
-    .badge {{
-      display: inline-block; padding: 3px 10px; border-radius: 50px;
+    .id-col {{ color: var(--muted); font-size: .8rem; width: 40px; }}
+    .badge {{ display: inline-block; padding: 3px 10px; border-radius: 50px;
       background: rgba(26,82,118,.1); color: var(--primary);
-      font-size: .75rem; font-weight: 600; white-space: nowrap;
-    }}
-    .msg {{ max-width: 320px; color: var(--muted); line-height: 1.5; }}
+      font-size: .75rem; font-weight: 600; white-space: nowrap; }}
+    .msg {{ max-width: 280px; color: var(--muted); line-height: 1.5; }}
     .date {{ white-space: nowrap; color: var(--muted); font-size: .8rem; }}
+    /* Delete button */
+    .del-btn {{
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(231,76,60,.08); border: 1px solid rgba(231,76,60,.3);
+      color: var(--red); padding: 6px 12px; border-radius: 8px;
+      font-size: .78rem; font-weight: 600; cursor: pointer;
+      transition: all .2s; white-space: nowrap;
+    }}
+    .del-btn:hover {{ background: var(--red); color: #fff; border-color: var(--red); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(231,76,60,.3); }}
+    /* Toast notification */
+    .toast {{
+      position: fixed; bottom: 28px; right: 28px;
+      background: var(--green); color: #fff;
+      padding: 14px 22px; border-radius: 12px;
+      font-size: .9rem; font-weight: 600;
+      box-shadow: 0 8px 24px rgba(39,174,96,.35);
+      animation: slideUp .3s ease; z-index: 999;
+    }}
+    @keyframes slideUp {{ from {{ opacity:0; transform:translateY(16px); }} to {{ opacity:1; transform:translateY(0); }} }}
     .empty {{ background: var(--white); border-radius: var(--radius); padding: 48px;
-              text-align: center; color: var(--muted); font-size: 1rem;
-              box-shadow: 0 2px 12px rgba(0,0,0,.07); }}
-    .empty.error {{ color: #E74C3C; background: #FEF9F9; }}
+      text-align: center; color: var(--muted); font-size: 1rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07); }}
+    .empty.error {{ color: var(--red); background: #FEF9F9; }}
     @media(max-width:768px) {{ .main {{ padding: 20px; }} .header {{ padding: 16px 20px; }} }}
   </style>
 </head>
@@ -245,6 +285,12 @@ def admin():
   <div class="main">
     {table_html}
   </div>
+  {toast}
+  <script>
+    // Auto-hide toast after 3 seconds
+    const t = document.getElementById('toast');
+    if (t) setTimeout(() => t.style.display = 'none', 3000);
+  </script>
 </body>
 </html>"""
     return html
